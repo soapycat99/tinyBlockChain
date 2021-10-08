@@ -1,0 +1,104 @@
+CREATE SCHEMA BlockChain; USE BlockChain;
+
+CREATE TABLE UserAccount( 
+	user_id INT NOT NULL AUTO_INCREMENT,
+	phone_number CHAR(20) NOT NULL,
+	SSN CHAR(20) NOT NULL,
+	name CHAR(50) NOT NULL,
+	country CHAR(30),
+	CONSTRAINT UserPK PRIMARY KEY(user_id)
+);
+ALTER TABLE UserAccount AUTO_INCREMENT = 3000;
+
+
+CREATE TABLE Wallet( 
+	wallet_id INT NOT NULL AUTO_INCREMENT,
+	wallet_hash VARCHAR(256) NULL,
+	private_key INT NULL,
+	user_id INT NOT NULL,
+	CONSTRAINT WalletPK PRIMARY KEY(wallet_id),
+	CONSTRAINT WalletFK FOREIGN KEY(user_id) REFERENCES UserAccount(user_id)
+	ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+ALTER TABLE Wallet AUTO_INCREMENT = 1000;
+
+
+CREATE TABLE WalletTransaction( 
+	wallet_id INT NOT NULL AUTO_INCREMENT,
+	tx_id INT NOT NULL,
+	CONSTRAINT WTPK PRIMARY KEY(wallet_id, tx_id),
+	CONSTRAINT WTFK1 FOREIGN KEY(wallet_id) REFERENCES Wallet(wallet_id)
+		ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+CREATE TABLE Transaction( 
+	tx_id INT NOT NULL AUTO_INCREMENT,
+	tx_hash VARCHAR(256) NULL,
+	tx_timestamp DATETIME,
+	block_id INT NULL, 
+	CONSTRAINT TransactionPK PRIMARY KEY(tx_id)
+);
+
+
+ALTER TABLE WalletTransaction
+	ADD CONSTRAINT WTFK2 FOREIGN KEY(tx_id) REFERENCES Transaction(tx_id) 		
+    ON DELETE CASCADE ON UPDATE CASCADE ;
+
+
+CREATE TABLE TransactionInput( 
+	txin_id INT NOT NULL AUTO_INCREMENT,
+	txin_value DECIMAL,
+	tx_id INT,
+	txout_id INT,
+	CONSTRAINT TxInPK PRIMARY KEY(txin_id),
+	CONSTRAINT TxInFK1 FOREIGN KEY(tx_id) REFERENCES Transaction(tx_id)
+	ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+
+CREATE TABLE TransactionOutput( 
+	txout_id INT NOT NULL AUTO_INCREMENT,
+	txout_value DECIMAL,
+	tx_id INT,
+	pubkey_id INT NULL,
+	CONSTRAINT TxOutPK PRIMARY KEY(txout_id),
+	CONSTRAINT TxOutFK1 FOREIGN KEY(tx_id) REFERENCES Transaction(tx_id)
+	ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+ALTER TABLE TransactionInput
+	ADD CONSTRAINT TxInFK2 FOREIGN KEY(txout_id) REFERENCES TransactionOutput(txout_id);
+
+
+CREATE TABLE PublicKey( 
+	pubkey_id INT NOT NULL,
+	pubkey_hash VARCHAR(256) NULL,
+	CONSTRAINT KeyPK PRIMARY KEY(pubkey_id)
+);
+
+
+ALTER TABLE TransactionOutput
+	ADD CONSTRAINT TxOutFK2 FOREIGN KEY(pubkey_id) REFERENCES	PublicKey(pubkey_id)
+	ON DELETE CASCADE;
+
+
+CREATE TABLE TransBlock( 
+	block_id INT NOT NULL AUTO_INCREMENT,
+	block_hash VARCHAR(256) NULL,
+	block_timestamp DATETIME,
+	block_nonce VARCHAR(256) NULL,
+	prev_block_id INT NULL,
+	total_satoshis INT DEFAULT 0,
+	CONSTRAINT BlockPK PRIMARY KEY(block_id)
+);
+
+
+ALTER TABLE Transaction
+	ADD CONSTRAINT TransactionFK FOREIGN KEY(block_id) REFERENCES TransBlock(block_id)
+	ON DELETE CASCADE ON UPDATE CASCADE;
+
+
